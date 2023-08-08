@@ -159,5 +159,8 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 
+# Macos trash
+.DS_Store
+
 # Specific to adminscrapper
 data/
