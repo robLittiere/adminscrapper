@@ -41,6 +41,7 @@ def get_my_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))
     ip = s.getsockname()[0]
+    print("This is my IP : " + ip)
     s.close()
     return ip
 
@@ -261,6 +262,7 @@ def launch_script():
 
     for ip in list_ips:
         mac = get_mac_address(ip, network_interface)
+        print(ip + '\n')
         # hostname = get_hostname(ip)
         hostname = "Inconnue"
         device = {
