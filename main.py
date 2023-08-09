@@ -6,8 +6,11 @@ import subprocess
 import re
 import csv
 import json
+import platform
 from urllib.request import urlopen
 from datetime import datetime, date
+
+import pyuac
 
 
 def pinger(job_q, results_q):
@@ -26,9 +29,17 @@ def pinger(job_q, results_q):
             break
 
         try:
-            subprocess.check_call(['ping', '-c1', ip],
-                                  stdout=DEVNULL)
-            results_q.put(ip)
+            if "windows" in platform.system().lower():
+                output = subprocess.check_output(['ping', '-n', '1', ip],
+                                                 universal_newlines=True)
+                if "TTL=" in output:
+                    results_q.put(ip)
+            else:
+                subprocess.check_call(['ping', '-c1', ip],
+                                      stdout=DEVNULL)
+                results_q.put(ip)
+
+
         except:
             pass
 
@@ -95,14 +106,33 @@ def get_mac_from_own(interface):
 
 
 def get_mac_address(ip_address, interface):
+    mac = None
     pid = subprocess.Popen(["arp", "-n", ip_address], stdout=subprocess.PIPE)
-    s = pid.communicate()[0].decode('utf-8')
-    regex = re.search(r"(([a-f\d]{1,2}\:){5}[a-f\d]{1,2})", s)
-    if regex is not None:
-        mac = regex.groups()[0]
-        print(mac)
+    if "windows" in platform.system().lower():
+        try:
+            arp_output = subprocess.check_output(["arp", "-a"], universal_newlines=True)
+            lines = arp_output.splitlines()
+
+            for line in lines[2:]:
+                if ip_address in line:
+                    parts = line.split()
+                    mac = parts[1]
+                    break
+            # In case we have no ARP entry
+            if mac is None:
+                mac = "Inconnu"
+        except subprocess.CalledProcessError:
+            pass
     else:
+        # Get mac on Linux
+        s = pid.communicate()[0].decode('utf-8')
+        regex = re.search(r"(([a-f\d]{1,2}\:){5}[a-f\d]{1,2})", s)
+        if regex is not None:
+            mac = regex.groups()[0]
+    if mac is None:
         mac = get_mac_from_own(interface)
+    print("For ip address : " + ip_address)
+    print("We have this mac : ", mac)
     return mac
 
 
@@ -156,8 +186,21 @@ def check_if_files_exist():
             w = csv.DictWriter(admin, delimiter=",", fieldnames=fields)
             w.writeheader()
 
+    # Check for log folder
+    if not os.path.exists(path_to_log_folder):
+        os.mkdir(path_to_log_folder)
+    if not os.path.exists(path_to_error_url):
+        with open(path_to_error_url, "w") as file:
+            pass
+
+    # Check for list-ip file
+    if not os.path.exists(path_to_list_ip):
+        with open(path_to_list_ip, "w") as file:
+            pass
+
 
 def create_folder_and_files_device(device):
+    print("Checking out folders and files...")
     path = device['path']
     if not os.path.exists(path):
         os.mkdir(path)
@@ -177,15 +220,6 @@ def create_folder_and_files_device(device):
             fields = ["Hostname", "Adresse MAC", "Adresse IP", "Date/Heure", "Date", "Time"]
             w = csv.DictWriter(file, delimiter=",", fieldnames=fields)
             w.writeheader()
-
-    if not os.path.exists(path_to_log_folder):
-        os.mkdir(path_to_log_folder)
-    if not os.path.exists(path_to_error_url):
-        with open(path_to_error_url, "w") as file:
-            pass
-    if not os.path.exists(path_to_list_ip):
-        with open(path_to_list_ip, "w") as file:
-            pass
 
 
 def append_device_data_to_files(device):
@@ -262,7 +296,6 @@ def launch_script():
 
     for ip in list_ips:
         mac = get_mac_address(ip, network_interface)
-        print(ip + '\n')
         # hostname = get_hostname(ip)
         hostname = "Inconnue"
         device = {
@@ -287,7 +320,7 @@ def launch_script():
 
     old_devices = get_old_devices_from_json()
     full_device_list = get_full_device_list(list_devices, old_devices)
-    print(full_device_list)
+    # print(full_device_list)
     write_devices_to_json(full_device_list)
 
     print('Testing VMs and websites...')
@@ -295,6 +328,7 @@ def launch_script():
 
 
 if __name__ == '__main__':
+
     path_to_data_folder = "data/"
     path_to_log_folder = path_to_data_folder + "logs/"
     path_to_json = path_to_data_folder + "network.json"
@@ -307,4 +341,14 @@ if __name__ == '__main__':
     path_to_ping = "/ping.csv"
     network_interface = "enp0s3"
 
-    launch_script()
+    # Ask for admin privileges if running on windows
+    current_os = platform.system()
+    if "windows" in current_os.lower():
+        if not pyuac.isUserAdmin():
+            print("Re-launching as admin")
+            pyuac.runAsAdmin()
+        else:
+            launch_script()
+
+    else:
+        launch_script()
