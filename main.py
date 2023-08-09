@@ -262,7 +262,6 @@ def launch_script():
 
     for ip in list_ips:
         mac = get_mac_address(ip, network_interface)
-        print(ip + '\n')
         # hostname = get_hostname(ip)
         hostname = "Inconnue"
         device = {
