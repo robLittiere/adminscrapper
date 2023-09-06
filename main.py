@@ -156,22 +156,15 @@ def get_old_devices_from_json():
 
 
 def get_full_device_list(new_devices, passed_devices):
-    final_device_list = []
     if len(passed_devices) > 0:
+        # Extract the "ID" values from current_devices as a set for faster lookup
+        new_devices_macs = set(device["mac_address"] for device in new_devices)
+
         for passed_device in passed_devices:
-            is_found = False
-            for new_device in new_devices:
-                if passed_device['mac_address'] == new_device['mac_address']:
-                    is_found = True
-                    final_device_list.append(new_device)
-
-            if not is_found:
-                passed_device['connected'] = "false"
-                final_device_list.append(passed_device)
-    else:
-        final_device_list = new_devices
-
-    return final_device_list
+            if passed_device["mac_address"] not in new_devices_macs:
+                passed_device["connected"] = "false"
+                new_devices.append(passed_device)
+    return new_devices
 
 
 def check_if_files_exist():
@@ -328,7 +321,7 @@ def launch_script():
     write_devices_to_json(full_device_list)
 
     print('Testing VMs and websites...')
-    test_pages()
+    ## test_pages()
 
 
 if __name__ == '__main__':
