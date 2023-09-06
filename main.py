@@ -107,7 +107,6 @@ def get_mac_from_own(interface):
 
 def get_mac_address(ip_address, interface):
     mac = None
-    pid = subprocess.Popen(["arp", "-n", ip_address], stdout=subprocess.PIPE)
     if "windows" in platform.system().lower():
         try:
             arp_output = subprocess.check_output(["arp", "-a"], universal_newlines=True)
@@ -122,17 +121,22 @@ def get_mac_address(ip_address, interface):
             if mac is None:
                 mac = "Inconnu"
         except subprocess.CalledProcessError:
-            pass
+            return "Inconnu"
     else:
+        try:
+            pid = subprocess.Popen(["arp", "-n", ip_address], stdout=subprocess.PIPE)
+        except subprocess.CalledProcessError:
+            return "Inconnu"
+
         # Get mac on Linux
         s = pid.communicate()[0].decode('utf-8')
         regex = re.search(r"(([a-f\d]{1,2}\:){5}[a-f\d]{1,2})", s)
         if regex is not None:
             mac = regex.groups()[0]
-    if mac is None:
-        mac = get_mac_from_own(interface)
-    print("For ip address : " + ip_address)
-    print("We have this mac : ", mac)
+        if mac is None:
+            mac = get_mac_from_own(interface)
+        print("For ip address : " + ip_address)
+        print("We have this mac : ", mac)
     return mac
 
 
@@ -258,7 +262,7 @@ def append_device_data_to_global_csv(device):
 
 def url_is_reachable(url):
     try:
-        response = urlopen(url, timeout=4).read().decode('utf-8')
+        response = urlopen(url, timeout=6).read().decode('utf-8')
     except:
         return False
     return response.getcode() == 200
@@ -297,7 +301,7 @@ def launch_script():
     for ip in list_ips:
         mac = get_mac_address(ip, network_interface)
         # hostname = get_hostname(ip)
-        hostname = "Inconnue"
+        hostname = "Inconnu"
         device = {
             "hostname": hostname,
             "ip_address": ip,
