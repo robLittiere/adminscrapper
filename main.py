@@ -7,6 +7,7 @@ import re
 import csv
 import json
 import platform
+import datetime
 from urllib.request import urlopen
 from datetime import datetime, date
 
@@ -281,6 +282,8 @@ def test_pages():
 
 
 def launch_script():
+    today = datetime.date.today()
+    print(today.strftime("%d/%m/%Y %H:%M:%S"))
     print('Mapping and pinging network...')
     list_ips = map_network()
 
@@ -320,8 +323,9 @@ def launch_script():
     # print(full_device_list)
     write_devices_to_json(full_device_list)
 
-    print('Testing VMs and websites...')
-    ## test_pages()
+    print('Testing VMs and websites... \n')
+
+    test_pages()
 
 
 if __name__ == '__main__':
