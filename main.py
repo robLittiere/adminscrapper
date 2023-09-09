@@ -7,7 +7,6 @@ import re
 import csv
 import json
 import platform
-import datetime
 from urllib.request import urlopen
 from datetime import datetime, date
 
@@ -282,7 +281,7 @@ def test_pages():
 
 
 def launch_script():
-    today = datetime.date.today()
+    today = date.today()
     print(today.strftime("%d/%m/%Y %H:%M:%S"))
     print('Mapping and pinging network...')
     list_ips = map_network()
