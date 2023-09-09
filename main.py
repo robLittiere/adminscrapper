@@ -281,8 +281,8 @@ def test_pages():
 
 
 def launch_script():
-    today = date.today()
-    print(today.strftime("%d/%m/%Y %H:%M:%S"))
+    now = datetime.now()
+    print(now.strftime("%d/%m/%Y %H:%M:%S"))
     print('Mapping and pinging network...')
     list_ips = map_network()
 
