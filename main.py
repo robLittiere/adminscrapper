@@ -255,8 +255,9 @@ def append_device_data_to_global_csv(device):
 
 def url_is_reachable(url):
     try:
-        response = urlopen(url, timeout=6).read().decode('utf-8')
-    except:
+        response = urlopen(url, timeout=6)
+    except Exception as error:
+        print(f'Error occured : {error}')
         return False
     return response.getcode() == 200
 
@@ -268,12 +269,15 @@ def test_pages():
             line_list = line.split('-')
             vm_name = line_list[0]
             vm_url = line_list[1].strip('\n')
+            print(f'Testing {vm_name} on {vm_url}...')
             if not url_is_reachable(vm_url):
                 with open(path_to_error_url, 'a') as error_file:
                     error_line = vm_name + "-" + vm_url + "-" + datetime.now().strftime("%d/%m/%Y %H:%M:%S") + '\n'
                     error_file.write(error_line)
+                    print('... done')
             else:
                 valid_urls.append(vm_name + "-" + vm_url + "-" + datetime.now().strftime("%d/%m/%Y %H:%M:%S") + '\n')
+                print('... done')
         if len(valid_urls) > 0:
             with open(path_to_success_url, "w") as success_file:
                 for url in valid_urls:
@@ -322,7 +326,7 @@ def launch_script():
     # print(full_device_list)
     write_devices_to_json(full_device_list)
 
-    print('Testing VMs and websites... \n')
+    print('Testing VMs and websites...')
 
     test_pages()
 
