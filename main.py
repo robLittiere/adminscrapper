@@ -257,7 +257,7 @@ def url_is_reachable(url):
     try:
         response = urlopen(url, timeout=6)
     except Exception as error:
-        print(f'Error occured : {error}')
+        print('... host unreachable')
         return False
     return response.getcode() == 200
 
